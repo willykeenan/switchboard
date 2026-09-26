@@ -116,6 +116,14 @@ python3 -m unittest discover -s agents/tests
 - Richer demo dataset for Hugging Face static previews
 - Publish to PyPI (`pip install .` works from a checkout today)
 
+## Run with Docker
+
+```bash
+docker run --rm -p 47834:47834 ghcr.io/willykeenan/switchboard --demo --host 0.0.0.0
+```
+
+Then open http://127.0.0.1:47834. Mount a volume at `/data` to keep your board between runs.
+
 ## Credits
 
 KE Studios. [Functional Source License 1.1, Apache 2.0 future license](LICENSE) (FSL-1.1-ALv2): free to use, modify and run yourself, including at work. The one thing it does not allow is offering Switchboard as a competing commercial product or hosted service. Each release becomes Apache-2.0 two years after it ships.
