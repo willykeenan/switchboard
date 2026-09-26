@@ -1,0 +1,60 @@
+/* Keep shell geometry identical on all shared pages, including while they load. */
+:root { --switchboard-header-height:82px; }
+html body > .topbar {
+  box-sizing:border-box; position:sticky; top:0; z-index:20;
+  display:grid; grid-template-columns:215px 390px 156px minmax(0,1fr);
+  grid-template-rows:82px; align-items:center; justify-content:initial;
+  gap:0 20px; width:100%; height:var(--switchboard-header-height);
+  min-height:var(--switchboard-header-height); padding:0 24px; margin:0;
+  border-bottom:1px solid var(--line,#30373b);
+  font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+html body > .topbar .brand {
+  grid-column:1; grid-row:1; display:flex; align-items:center; gap:12px;
+  width:215px; min-width:0; margin:0; text-decoration:none; color:inherit;
+}
+html body > .topbar .brand .mark { display:block; flex:none; width:32px; height:36px; line-height:36px; font-size:32px; text-align:center; border:0; background:transparent; }
+html body > .topbar .brand strong { display:block; margin:0; font-size:15px; font-weight:650; letter-spacing:-.2px; line-height:21px; white-space:nowrap; }
+html body > .topbar .brand small { display:block; margin:1px 0 0; color:var(--muted,#a8b1b5); font-size:11px; font-weight:400; line-height:15px; white-space:nowrap; }
+html body > .topbar nav { grid-column:2; grid-row:1; display:grid; grid-template-columns:78px 68px 158px 68px; align-items:center; gap:6px; width:390px; min-width:0; height:36px; padding:0; margin:0; background:transparent; border:0; border-radius:0; }
+html body > .topbar nav a { box-sizing:border-box; display:flex; align-items:center; justify-content:center; height:36px; padding:0 8px; margin:0; font-size:13px; font-weight:500; line-height:18px; letter-spacing:0; text-decoration:none; white-space:nowrap; border:0; border-radius:7px; color:var(--muted,#a8b1b5); }
+html body > .topbar nav a[aria-current=page] { color:#d5f6dc; background:#24392e; }
+html body > .topbar .project-control { grid-column:3; grid-row:1; display:flex; width:156px; min-width:0; gap:0; margin:0; }
+html body > .topbar .project-trigger { display:flex; align-items:center; justify-content:space-between; gap:8px; box-sizing:border-box; width:156px; min-width:0; height:36px; margin:0; padding:0 11px; font:600 13px/18px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; border:1px solid #3b4448; border-radius:7px; background:#23292d; color:#edf0ec; text-align:left; }
+html body > .topbar #project-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+html body > .topbar .project-trigger small { flex:none; font-size:12px; color:#9acdbc; }
+html body > .topbar .top-actions { grid-column:4; grid-row:1; display:flex; justify-content:flex-end; align-items:center; gap:8px; min-width:0; height:36px; margin:0; white-space:nowrap; }
+html body > .topbar .top-actions button, html body > .topbar .header-rooms { flex:none; height:34px; padding:0 10px; font:12px/32px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; text-decoration:none; border-radius:7px; }
+html body > .topbar .mode { display:none; }
+html body > .topbar #save-state { display:none; }
+html body > .topbar .read-only, html body > .topbar .local-indicator { display:block; margin:0; font-size:10px; }
+.shell { height:calc(100vh - var(--switchboard-header-height)); }
+.header-project-dialog { box-sizing:border-box; width:min(460px,calc(100vw - 32px)); max-height:calc(100vh - 48px); padding:24px; border:1px solid #46534e; border-radius:14px; background:#1c2323; color:#edf0ec; }
+.header-project-dialog::backdrop { background:#0009; }
+.header-project-dialog h2 { font-size:22px; margin:0 0 12px; }
+.header-project-dialog p { font-size:13px; line-height:1.6; color:#abb8b2; margin:0 0 16px; }
+.header-project-options { display:grid; gap:8px; margin-bottom:20px; }
+.header-project-options button { text-align:left; }
+.header-project-options button[aria-pressed=true] { border-color:#94b8a3; background:#294035; }
+@media (min-width:1500px) { html body > .topbar #save-state { display:block; font-size:11px; } }
+@media (max-width:1239px) {
+  :root { --switchboard-header-height:124px; }
+  html body > .topbar { grid-template-columns:215px 390px 156px minmax(0,1fr); grid-template-rows:76px 48px; }
+  html body > .topbar .top-actions { grid-column:1/-1; grid-row:2; align-self:start; height:36px; overflow-x:auto; }
+  html body > .topbar #save-state { display:block; margin-right:auto; font-size:11px; }
+  html body > .topbar .mode { display:block; margin-right:auto; font-size:10px; }
+}
+@media (max-width:800px) {
+  :root { --switchboard-header-height:164px; }
+  html body > .topbar { grid-template-columns:minmax(0,1fr) 140px; grid-template-rows:64px 48px 52px; gap:0 12px; padding:0 16px; }
+  html body > .topbar .brand { width:auto; gap:8px; }
+  html body > .topbar .brand strong { font-size:13px; }
+  html body > .topbar .brand small { display:none; }
+  html body > .topbar .brand .mark { width:25px; font-size:25px; }
+  html body > .topbar nav { grid-column:1/-1; grid-row:2; width:100%; grid-template-columns:1fr .85fr 1.8fr .85fr; }
+  html body > .topbar nav a { font-size:12px; padding:0 5px; }
+  html body > .topbar .project-control { grid-column:2; width:140px; }
+  html body > .topbar .project-trigger { width:140px; font-size:12px; }
+  html body > .topbar .top-actions { grid-row:3; justify-content:flex-start; }
+  html body > .topbar .mode, html body > .topbar #save-state { display:none; }
+}

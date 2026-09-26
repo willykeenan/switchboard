@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "switchboard"
+version = "1.0.0"
+description = "Local coordination board for AI coding agents (Claude Code, Codex)"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "FSL-1.1-ALv2" }
+authors = [{ name = "KE Studios" }]
+
+[project.scripts]
+switchboard = "switchboard.__main__:main"
+
+# The board is a flat set of modules at the repository root. When installed, they
+# are nested under switchboard/app so nothing generic (agents, inspector, store,
+# server...) lands at the top level of site-packages. switchboard/__main__.py
+# puts that directory on sys.path before importing the board.
+[tool.setuptools]
+packages = [
+    "switchboard",
+    "switchboard.app",
+    "switchboard.app.agents",
+    "switchboard.app.inspector",
+    "switchboard.app.custom_capabilities",
+]
+
+[tool.setuptools.package-dir]
+"switchboard" = "switchboard"
+"switchboard.app" = "."
+"switchboard.app.agents" = "agents"
+"switchboard.app.inspector" = "inspector"
+"switchboard.app.custom_capabilities" = "custom_capabilities"
+
+[tool.setuptools.package-data]
+"switchboard.app" = ["*.html", "*.css", "*.js", "README.md", "WORKFLOW-CONTROL.md", "INTEGRATION.md", "HANDOFFS.md", "TASKFLOW.md", "LICENSE"]
+"switchboard.app.agents" = ["*.html", "*.css", "*.js", "*.mjs", "*.md", "*.txt"]
+"switchboard.app.inspector" = ["*.html", "*.css", "*.js", "*.json"]
+"switchboard.app.custom_capabilities" = ["*.html", "*.css", "*.js"]

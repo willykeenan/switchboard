@@ -1,0 +1,4 @@
+#viewport{cursor:grab;overflow-anchor:none}
+#viewport.is-panning,#viewport.is-panning *{cursor:grabbing!important;user-select:none!important}
+#pan-surface{position:relative;min-width:100%;min-height:100%;pointer-events:auto}
+#pan-origin{position:absolute;left:6000px;top:6000px}

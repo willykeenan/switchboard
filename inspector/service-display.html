@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Switchboard · Services</title><link rel="stylesheet" href="/inspector/service-display.css">
+<script src="/inspector/service-display.js" defer></script></head>
+<body><main>
+<header><div><p class="eyebrow">Switchboard · Services</p><h1 id="title">Service display</h1><p class="sub">Project records, available without an active agent.</p></div><span class="badge">Read only</span></header>
+<nav aria-label="Project services"><a id="library-link">Library &amp; Receipts</a><a id="dispatch-link">Task Board / Dispatch</a></nav>
+<p id="coverage" class="coverage">Current Birds obligations and bound receipts are not yet loaded. Historical records are available separately.</p>
+<section class="toolbar"><label>Record source<select id="record-source"><option value="current">Current work &amp; bound receipts</option><option value="historical">Historical records / index</option></select></label><label>Find in this page<input id="search" type="search" placeholder="Title, state, source or ID"></label><button id="refresh" type="button">Refresh records</button></section>
+<div id="status" role="status" aria-live="polite" data-state="loading">Loading project records…</div>
+<p id="freshness" class="meta">No successful read yet.</p>
+<p id="boundary" class="meta">Recorded results are evidence; they do not by themselves establish acceptance, installation or learning.</p>
+<details id="sources" hidden><summary>Sources and indexing</summary><div id="source-content"></div></details>
+<section id="records" aria-label="Project records"></section>
+<button id="more" type="button" hidden>Load next page</button>
+<section id="detail" aria-label="Selected record" hidden></section>
+<footer>Refresh reads local records only. It does not start work, send prompts or call a model.</footer>
+</main></body></html>

@@ -1,0 +1,81 @@
+.tf-icon-layer{position:fixed;inset:0;pointer-events:none;z-index:45}
+.tf-task-icon{position:absolute;display:grid;place-items:center;transform:translate(-50%,-50%);width:44px;height:44px;min-width:44px;min-height:44px;padding:0!important;border:0!important;border-radius:9px!important;background:transparent!important;color:#473917!important;box-shadow:none!important;pointer-events:auto;touch-action:none;cursor:pointer}
+.tf-task-icon[hidden]{display:none!important}.tf-task-symbol{display:block;width:24px;height:24px;box-sizing:border-box;transform:scale(var(--tf-scale,1));position:relative;border:0;border-radius:4px;background:transparent;font-size:20px;line-height:22px}.tf-task-icon:focus-visible{outline:3px solid #55adff;outline-offset:3px}.tf-task-icon.tf-completed .tf-task-symbol{background:transparent;border-color:transparent}
+.wf-bunker-task[data-task-id]{position:relative;padding-left:36px}.tf-task-anchor{position:absolute;left:6px;top:12px;width:24px;height:24px;color:#dbc380;font-size:20px;line-height:24px}.tf-bird-roster{font-size:10px;color:#97b6ae;line-height:1.5}
+.tf-review-queue{display:grid;gap:10px;margin-top:30px;margin-bottom:26px;padding:10px;border:1px dashed #a5a87960;border-radius:5px}.tf-review-task{position:relative;min-height:50px;padding:10px 10px 10px 38px;text-align:left}.tf-review-task .tf-task-anchor{top:10px}
+.tf-carry-bird{display:none;width:28px;height:28px;margin:0;overflow:visible;filter:drop-shadow(0 0 1px #0a242f)}.tf-carry-bird .tf-paper{filter:drop-shadow(0 0 .045px #ff3447)}
+.tf-task-icon[data-phase=pickup] .tf-carry-bird,.tf-task-icon[data-phase=moving] .tf-carry-bird,.tf-task-icon[data-phase=handoff] .tf-carry-bird{display:block}
+.tf-roost-bird .tf-carry-bird,.tf-courier-portrait .tf-carry-bird{display:block}
+.wf-task-working>.wf-agent-avatar{animation:tf-worker-working 1.1s ease-in-out infinite alternate}@keyframes tf-worker-working{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-2px) rotate(2deg)}}
+.tf-icon-label,.tf-icon-state{display:none;position:absolute;left:50%;transform:translateX(-50%);width:max-content;max-width:220px;padding:4px 7px;border-radius:5px;background:#18242a;color:#fff;font-size:11px;line-height:1.4;overflow-wrap:anywhere;white-space:normal;pointer-events:none}
+.tf-icon-label{bottom:calc(100% + 6px)}.tf-icon-state{top:calc(100% + 4px)}.tf-task-icon:hover .tf-icon-label,.tf-task-icon:focus .tf-icon-label,.tf-task-icon:hover .tf-icon-state,.tf-task-icon:focus .tf-icon-state{display:block}
+.tf-inspector{padding:16px;overflow-wrap:anywhere;min-width:0}.tf-inspector h2{font-size:18px;line-height:1.4}.tf-inspector h3{font-size:13px;margin:0 0 9px}.tf-section{margin:20px 0;padding-top:14px;border-top:1px solid var(--line,#39434b)}.tf-text{white-space:pre-wrap;line-height:1.55}.tf-state{display:inline-block;padding:4px 8px;border-radius:5px;background:#40503a;color:#f6f4db;font-size:12px}.tf-task-heading small{display:block;color:#9aaba7;font-size:10px}.tf-event{padding:12px 0;border-bottom:1px solid #66766b40}.tf-event small{display:block;font-size:11px;color:#9eaaa8;margin-top:3px}.tf-route-label{font-size:12px}.tf-record{margin:8px 0}.tf-record summary{cursor:pointer;font-size:12px}.tf-record pre{white-space:pre-wrap;word-break:break-word;font:11px/1.5 ui-monospace,monospace;padding:10px;background:#10191c;border-radius:6px;max-height:360px;overflow:auto}.tf-artifact{display:block;margin:8px 0;color:#b8d788}.tf-actions{display:flex;gap:8px;flex-wrap:wrap}.tf-dialog{width:min(640px,90vw);max-height:85vh;overflow:auto;padding:20px;border:1px solid #536156;border-radius:12px;background:#182329;color:#e8eeeb}.tf-dialog::backdrop{background:#0008}.tf-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.tf-dialog h2{font-size:19px}.tf-dialog form{display:grid;gap:14px}.tf-field{display:grid;gap:6px;font-size:13px}.tf-field input,.tf-field textarea{width:100%;box-sizing:border-box;background:#0e171c;color:#e7eee5;border:1px solid #50615e;border-radius:6px;padding:10px;font:inherit}.tf-field textarea{min-height:88px;resize:vertical}.tf-check{display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.5}.tf-check input{margin-top:4px}.tf-error{color:#ffc88e}.tf-worker{display:grid;gap:8px;padding:12px 0;border-top:1px solid #49544e}.tf-worker span{font-size:12px}.tf-connection{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);max-width:80vw;border:1px solid #dbb574;background:#29332a;padding:9px 14px;color:#ffdda3;z-index:70;font-size:12px;border-radius:8px}.tf-connection[hidden]{display:none}.tf-board-actions{display:flex;flex-wrap:wrap;gap:7px;margin:7px 0}.tf-board-actions button{font-size:11px}.wf-bunker-task[data-task-id]{cursor:pointer}.tf-task-count{font-size:11px;color:#93a59a}
+@media(prefers-reduced-motion:reduce){.tf-task-icon,.wf-task-working>.wf-agent-avatar{transition:none!important;animation:none!important}}
+
+.tf-flock{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0}.tf-roost-bird{display:inline-flex;align-items:center;gap:3px;min-height:44px;padding:3px 5px!important;font-size:10px!important;background:#18242a!important}.tf-roost-bird .tf-carry-bird{display:block;flex:none}.tf-roost-bird:focus-visible{outline:2px solid #55adff;outline-offset:2px}
+
+.tf-shared-roost{grid-column:1 / -1;display:flex;align-items:center;gap:12px;margin:0;min-width:0}.tf-shared-roost .tf-flock{margin:0}.tf-shared-roost>span{white-space:nowrap}.library-view .tf-shared-roost,.library-view .tf-flight-layer{display:none}
+
+.tf-birdhouse{grid-column:1 / -1;align-items:center;gap:10px;margin-top:4px;padding:7px 10px 6px;border:1px solid #5a4a36;border-radius:4px 4px 9px 9px;background:#17140f;box-shadow:inset 0 1px 0 #7a684a55;min-width:0}
+.tf-birdhouse-label{font-size:10px;color:#c4b287;white-space:nowrap;font-weight:650}
+.tf-roost-bird[data-perch=empty] .tf-carry-bird{visibility:hidden}
+.tf-roost-bird[data-perch=empty]{background:#120e0c!important;opacity:.72}
+.tf-flight-layer{position:fixed;inset:0;pointer-events:none;z-index:47}
+.tf-flight-bird{position:absolute;width:28px;height:28px;transform:translate(-50%,-50%);pointer-events:none}
+.tf-flight-bird .tf-carry-bird{display:block;width:28px;height:28px;margin:0}
+.tf-flight-bird[data-phase=home] .tf-paper,.tf-flight-bird[data-phase=home] .tf-stage-cues{display:none}
+.tf-flight-bird[data-phase=home] .tf-bird-pose{transform:translate(0,-.08px) rotate(-18deg) scale(.78)}
+
+.tf-roost-bird[data-state=standby] .tf-paper,.tf-courier-portrait[data-state=standby] .tf-paper,.tf-roost-bird[data-perch=home] .tf-paper{display:none}
+.tf-courier-portrait{display:block;width:28px;height:28px}
+
+/* Screen-readable task parcels; camera zoom never reduces the label or hit target. */
+.tf-task-icon[data-has-transfer=true] .tf-icon-label,.tf-task-icon[data-has-transfer=true] .tf-icon-state,.tf-task-icon[data-followed=true] .tf-icon-label{display:block;left:calc(50% + var(--tf-label-shift,0px));max-width:var(--tf-label-width,240px);box-shadow:0 2px 8px #0007}
+.tf-task-icon[data-has-transfer=true] .tf-icon-label{font-weight:650;border:1px solid #c4b787;color:#fff3c9}
+.tf-task-icon[data-has-transfer=true] .tf-icon-state{font-size:10px;max-height:64px;overflow:hidden}
+.tf-task-icon .tf-carry-bird{width:28px;height:28px;margin:-2px}
+.tf-task-icon[data-phase=reduced] .tf-carry-bird{display:block}
+.tf-travel-feed{position:fixed;z-index:46;padding:10px 12px;border:1px solid #7c8d77;border-radius:9px;background:#18242af2;color:#edf1e6;box-shadow:0 4px 20px #0006;font:12px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;max-height:220px;overflow:auto;box-sizing:border-box}
+.tf-travel-feed[hidden]{display:none}.tf-travel-feed>strong{display:inline-block;margin-right:16px}.tf-travel-feed button{font:inherit;cursor:pointer;color:#e5f5ba;border:1px solid #70806f;border-radius:4px;background:#25352c;padding:4px 7px;min-height:30px;text-align:left}
+.tf-travel-feed button:focus-visible{outline:2px solid #55adff;outline-offset:2px}.tf-travel-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 8px;border-top:1px solid #73806550;padding-top:7px;margin-top:7px;overflow-wrap:anywhere}.tf-travel-row>button:first-child{grid-column:1/-1;border:0;background:none;padding:0;color:#fff3c9;font-weight:650}.tf-travel-row>span,.tf-travel-row>small{grid-column:1}.tf-travel-row>button:not(:first-child){grid-column:2;grid-row:2/4;align-self:center}.tf-travel-row small{color:#aebeb4}.tf-travel-row .tf-error{color:#ffc88e}
+.tf-individual-paths{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:16;overflow:visible}
+.tf-individual-paths *{pointer-events:none}
+.tf-agent-path-bed{fill:none;stroke:#293c32;stroke-width:7;stroke-linejoin:round;stroke-linecap:round;opacity:.35;pointer-events:none}.tf-agent-path-line{fill:none;stroke:#b1c19a;stroke-width:1.5;stroke-dasharray:4 5;stroke-linejoin:round;stroke-linecap:round;opacity:.4;pointer-events:none}.tf-agent-path-end{fill:#ecdf9e;stroke:#405438;stroke-width:2;opacity:.45;pointer-events:none}.tf-active-task-path{fill:none;stroke:#f3d781;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:.7;filter:drop-shadow(0 0 3px #d8b95180);pointer-events:none}
+/* The approved bird and its red document share the same task hit target. */
+.tf-task-icon[data-has-transfer=true] .tf-task-symbol{background:transparent;border:0;box-shadow:none}
+.tf-task-icon .tf-paper{display:none}.tf-task-icon[data-phase=pickup] .tf-paper,.tf-task-icon[data-phase=moving] .tf-paper,.tf-task-icon[data-phase=handoff] .tf-paper,.tf-task-icon[data-phase=reduced] .tf-paper{display:block}
+.library-view .tf-individual-paths,.library-view .tf-travel-feed,.library-view .tf-icon-layer{display:none}
+.tf-task-icon.tf-stuck .tf-task-symbol{background:#ff646420!important;border:2px solid #ff6464!important;color:#34100c;box-shadow:0 0 0 4px #e84b4b45,0 0 18px #e84b4b70!important}.tf-task-icon.tf-stuck .tf-icon-label,.tf-task-icon.tf-stuck .tf-icon-state{display:block;border:1px solid #f37878;background:#4a191b;color:#fff;max-width:240px}.tf-task-icon.tf-stuck .tf-icon-label:before{content:'! ';font-weight:800}
+.tf-task-icon.tf-path-blocked:not(.tf-stuck) .tf-task-symbol{border:2px dashed #ed8667!important;box-shadow:0 0 0 3px #e8725340}
+.tf-stuck-row{border-color:#ef6868!important;background:#431b2066!important}.tf-stuck-row:after{content:'! Needs attention';display:block;color:#ff9b92;font-size:11px;font-weight:700}.tf-stuck-explanation{border-left:4px solid #ff6464;padding:10px;background:#461c2266;color:#ffb3a9;line-height:1.5}.tf-travel-feed.tf-has-blocked{border-color:#ff7676}.tf-travel-row[data-stuck=true]>button:first-child{color:#ff9b92}.tf-travel-row[data-stuck=true]>small{color:#ffb3a9}
+/* Keep the location visible when several stopped tasks share one desk. */
+.tf-task-icon.tf-stuck:not(:hover):not(:focus):not([data-followed=true]) .tf-icon-label,.tf-task-icon.tf-stuck:not(:hover):not(:focus):not([data-followed=true]) .tf-icon-state{display:none}
+.tf-task-icon.tf-stuck .tf-task-symbol:after{content:'!';position:absolute;right:-5px;top:-8px;width:13px;height:13px;border-radius:50%;font:800 10px/13px -apple-system;background:#ffd8d1;color:#68131b}
+.tf-task-icon .tf-icon-label{max-height:32px;overflow:hidden}.tf-task-icon .tf-icon-state{max-height:42px;overflow:hidden}
+.tf-travel-row>button:first-child,.tf-travel-row>small.tf-error{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+.tf-completed-board{margin-top:14px;padding-top:12px;border-top:1px solid #7c8d7755}
+.tf-completed-station{display:block;margin-bottom:8px;color:#cfe3b8;font-size:12px}
+.tf-wait-reason{display:block;color:#c9b48a;font-size:10px;line-height:1.4;margin-top:4px}
+
+/* Distinct transfer poses keep the original outline; only position/orientation changes. */
+.tf-bird-pose{transform-box:fill-box;transform-origin:center}.tf-cue{display:none}
+.tf-task-icon[data-phase=stationed]:not(.tf-stuck) .tf-bird-pose{transform:translate(-.13px,.18px) scale(.70)}
+.tf-task-icon[data-phase=stationed]:not(.tf-stuck) .tf-paper{transform:translate(.57px,0)}
+.tf-task-icon[data-phase=stationed]:not(.tf-stuck) .tf-cue-stationed{display:block}
+.tf-task-icon[data-phase=pickup] .tf-bird-pose{transform:translate(-.04px,-.06px) rotate(22deg) scale(.78)}
+.tf-task-icon[data-phase=pickup] .tf-paper{transform:translate(.43px,-.16px);animation:tf-document-pickup .6s ease-out both}
+.tf-task-icon[data-phase=pickup] .tf-cue-pickup{display:block}
+.tf-task-icon[data-phase=moving] .tf-bird-pose{transform:translate(.12px,-.12px) rotate(-12deg) scale(.80)}
+.tf-task-icon[data-phase=moving] .tf-paper{transform:translate(.12px,-.20px)}
+.tf-task-icon[data-phase=moving] .tf-cue-moving{display:block}
+.tf-task-icon[data-phase=handoff] .tf-bird-pose{transform:translate(-.12px,-.18px) rotate(-27deg) scale(.62)}
+.tf-task-icon[data-phase=handoff] .tf-paper{transform:translate(.43px,-.10px);animation:tf-document-handoff .8s ease-in both}
+.tf-task-icon[data-phase=handoff] .tf-cue-handoff{display:block}
+.tf-task-icon[data-phase=reduced] .tf-bird-pose{transform:translate(.20px,-.20px) scale(.58)}
+.tf-task-icon[data-phase=reduced] .tf-paper{transform:translate(.28px,-.28px)}
+.tf-task-icon[data-phase=reduced] .tf-cue-reduced{display:block}
+.tf-task-icon[data-pressed=true] .tf-paper{animation-play-state:paused}
+@keyframes tf-document-pickup{from{transform:translate(.43px,-.04px)}to{transform:translate(.43px,-.22px)}}
+@keyframes tf-document-handoff{from{transform:translate(.43px,-.30px)}to{transform:translate(.43px,-.10px)}}
+@media(prefers-reduced-motion:reduce){.tf-carry-bird *{animation:none!important}}

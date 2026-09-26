@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Agent Rooms · KE Studios</title>
+  <link rel="stylesheet" href="/rooms.css">
+  <script src="/workspaces.js" defer></script>
+  <script src="/rooms.js" defer></script>
+</head>
+<body>
+  <aside>
+    <a class="brand" href="/rooms"><span class="monogram">KE</span><span>Agent Rooms<small>KE STUDIOS</small></span></a>
+    <div class="sidebar-scroll">
+    <div class="nav-heading"><span class="eyebrow">PROJECTS</span><button id="new-project" class="text-button" aria-label="Create project">＋</button></div>
+    <nav id="project-list" aria-label="Projects and lanes"></nav>
+    <div class="eyebrow rooms-label">SHARED ROOMS</div>
+    <nav id="room-list" aria-label="Agent rooms"></nav>
+    </div>
+    <div class="aside-bottom"><span class="local-dot"></span> Private on this Mac<p>Read the conversations behind the work.</p><a href="/">Operations board ↗</a></div>
+  </aside>
+  <main>
+    <header>
+      <div class="heading-top"><span id="view-kind" class="eyebrow">CONVERSATIONS</span><span id="connection" role="status">Connecting…</span></div>
+      <h1 id="room-title">Agent Rooms</h1>
+      <p id="room-description">Opening your conversations…</p>
+      <div class="filters">
+        <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" aria-label="Search room history" placeholder="Search this room’s entire history…" maxlength="500"></label>
+        <label class="sr-only" for="author">Author</label><select id="author"><option value="">All agents</option></select>
+        <label class="sr-only" for="kind">Message type</label><select id="kind"><option value="">All messages</option><option value="question">Questions</option><option value="decision">Decisions</option><option value="result">Results</option><option value="ack">Acknowledgments</option><option value="message">Messages</option><option value="system">System</option></select>
+      </div>
+    </header>
+    <section id="workspace" class="workspace" aria-label="Project workspace" hidden></section>
+    <section class="feed-wrap" aria-label="Conversation history">
+      <div class="feed-heading"><span id="count">Loading history…</span><button id="latest" class="text-button" hidden>Back to latest</button><span id="sort">Newest first</span></div>
+      <div id="error" role="alert" hidden></div>
+      <div id="notice" role="status" hidden></div>
+      <button id="new-messages" hidden>New messages available · Show latest ↓</button>
+      <div id="feed" aria-busy="true"></div>
+      <button id="older" class="older" hidden>Load older messages</button>
+      <footer>Original agent messages · Reading here does not acknowledge or change their work.</footer>
+    </section>
+  </main>
+  <dialog id="workspace-editor" aria-labelledby="editor-title">
+    <div class="editor-heading"><h2 id="editor-title">Edit workspace</h2><button id="close-editor" class="text-button" aria-label="Close editor">Close</button></div>
+    <p class="muted">Organize existing work. Task ownership and execution permissions stay with their current owners.</p>
+    <form id="workspace-form"></form>
+    <p id="editor-error" role="alert"></p>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,60 @@
+{
+  "schema": "ke.role-panel.registry.v1",
+  "project": "demo",
+  "lane": "workstream-demo-work",
+  "lanes": [
+    "workstream-demo-work",
+    "project-demo-librarian",
+    "project-demo-alignment"
+  ],
+  "capturedAt": "2026-01-01T00:00:00+00:00",
+  "workflowRevision": 1,
+  "coverage": "Demo registry of four invented agents. No real sessions.",
+  "resources": [],
+  "members": [
+    {
+      "agentId": "codex:demo-owner",
+      "laneId": "workstream-demo-work",
+      "role": "coordinator",
+      "teamId": "coordinator",
+      "threadId": "demo-owner",
+      "label": "Workstream Owner",
+      "view": "owner",
+      "defaultSection": "work",
+      "externalSurface": null
+    },
+    {
+      "agentId": "codex:demo-worker",
+      "laneId": "workstream-demo-work",
+      "role": "worker",
+      "teamId": "worker",
+      "threadId": "demo-worker",
+      "label": "Worker",
+      "view": "core",
+      "defaultSection": "work",
+      "externalSurface": null
+    },
+    {
+      "agentId": "claude:demo-researcher",
+      "laneId": "workstream-demo-work",
+      "role": "researcher",
+      "teamId": "researcher",
+      "threadId": "demo-researcher",
+      "label": "Research",
+      "view": "research",
+      "defaultSection": "documents",
+      "externalSurface": null
+    },
+    {
+      "agentId": "codex:demo-auditor",
+      "laneId": "project-demo-alignment",
+      "role": "auditor",
+      "teamId": "auditor",
+      "threadId": "demo-auditor",
+      "label": "Independent Audit",
+      "view": "review",
+      "defaultSection": "work",
+      "externalSurface": null
+    }
+  ]
+}

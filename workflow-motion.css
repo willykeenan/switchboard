@@ -1,0 +1,30 @@
+/* Scoped communications layer; no canvas/card layout replacement. */
+.wf-agent-ports{display:flex!important;gap:6px!important;flex-wrap:wrap;position:relative!important;inset:auto!important;margin:10px 0 6px!important}.wf-agent-port{width:auto!important;min-width:68px!important;min-height:32px!important;display:inline-flex!important;align-items:center;justify-content:center;gap:5px;padding:6px 9px!important;border:1px solid #607284!important;border-radius:8px!important;background:#142231!important;color:#e7edf4!important;font-size:11px!important}.wf-agent-port svg{width:14px;height:14px}.wf-port-label{display:inline!important}.wf-motion-log{position:absolute!important;left:16px;bottom:16px;top:auto!important;right:auto!important;width:min(410px,calc(100% - 32px));max-height:235px;overflow:auto;z-index:18;background:#122030f5;border:1px solid #546b80;border-radius:12px;box-shadow:0 6px 24px #0005;color:#edf3fa;padding:10px 12px;font:12px system-ui}.wf-motion-log summary{cursor:pointer;font-weight:650;padding:4px}.wf-motion-status{font-size:11px;color:#efd096;margin:6px 4px}.wf-motion-row{display:grid;grid-template-columns:1fr auto;gap:3px 8px;padding:9px 3px;border-top:1px solid #334658}.wf-motion-row small{grid-column:1;color:#aebfd0;line-height:1.4}.wf-motion-inspect{grid-column:1;white-space:normal!important;text-align:left!important;border:0;background:none;color:inherit;font:inherit;padding:0}.wf-motion-replay{grid-column:2;grid-row:1/3;align-self:center;min-height:32px;border:1px solid #8a795c;border-radius:7px;background:#2d302e;color:#f0d9b0;padding:4px 9px}.wf-motion-replay:disabled{opacity:.4;cursor:default}.wf-motion-log button:focus-visible,.wf-agent-port:focus-visible{outline:2px solid #afd5ff;outline-offset:3px}.wf-task-attachments{font-size:11px;border-top:1px solid #40566a;margin-top:8px;padding-top:6px}.wf-task-attachments p{white-space:normal;overflow-wrap:anywhere}.wf-message-arrows{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:16}.library-view .wf-motion-log,.library-view .wf-dispatch-signals,.library-view .wf-message-arrows{display:none!important}
+
+.wf-motion-boundary{position:fixed;z-index:18;min-height:28px;padding:5px 8px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid #efd096;border-radius:7px;background:#162333;color:#efd096;font:11px system-ui;cursor:pointer}.wf-motion-boundary:focus-visible{outline:2px solid #afd5ff;outline-offset:2px}.library-view .wf-motion-boundaries{display:none!important}
+
+/* Fixed screen-space courier, driven exclusively by recorded message state. */
+.wf-courier{position:fixed;z-index:20;width:76px;height:74px;transform:translate(-50%,-61%);border:0;padding:0;background:transparent;color:#f5edd5;cursor:pointer;overflow:visible;filter:drop-shadow(0 3px 3px #001a)}.wf-courier:hover,.wf-courier:focus-visible{background:#263b4190;border-radius:50%;outline:2px solid #c6e3a2;outline-offset:3px}.wf-kea-art{display:block;width:76px;height:68px;overflow:visible;pointer-events:none}.wf-kea-facing{transform:scaleX(var(--kea-facing,1));transform-origin:40px 36px}.wf-courier-caption{position:absolute;top:70px;left:50%;transform:translateX(-50%);white-space:nowrap;max-width:290px;overflow:hidden;text-overflow:ellipsis;background:#15232ff5;border:1px solid #819c6e;border-radius:7px;padding:4px 8px;color:#edf6d8;font:11px system-ui;pointer-events:none}.wf-courier-state{position:absolute;top:5px;right:-1px;background:#2b4c3a;border:1px solid #bad69b;border-radius:50%;width:21px;height:21px;display:grid;place-items:center;color:#f7edc9;font:13px system-ui;pointer-events:none}.wf-kea-held .wf-courier-state{background:#754a3b;border-color:#f3ad95}.wf-kea-held .wf-courier-caption{border-color:#d5947f}.wf-kea-flying .wf-kea-wing{transform-origin:40px 36px;animation:wf-kea-wingbeat .25s ease-in-out infinite alternate}@keyframes wf-kea-wingbeat{from{transform:rotate(-14deg) scaleY(.85)}to{transform:rotate(19deg) scaleY(1.08)}}.library-view .wf-couriers{display:none!important}@media(prefers-reduced-motion:reduce){.wf-kea-flying .wf-kea-wing{animation:none!important}}
+
+.wf-message-parcel{position:fixed;z-index:21;width:34px;height:25px;transform:translate(-50%,-50%);padding:0;border:0;background:transparent;cursor:pointer;filter:drop-shadow(0 2px 2px #102b)}.wf-message-parcel svg{width:100%;height:100%;display:block;pointer-events:none}.wf-message-parcel:hover,.wf-message-parcel:focus-visible{outline:2px solid #cbe5a0;outline-offset:3px;border-radius:4px}.wf-message-parcel[data-parcel-phase=held],.wf-message-parcel[data-parcel-phase=failed]{filter:drop-shadow(0 0 4px #ed816d)}
+
+/* Compact room desks keep build17 action geometry. Full Team/Work cards retain labels. */
+.wf-bunker-desk>.wf-agent-ports{position:absolute!important;left:2px!important;top:21px!important;right:auto!important;bottom:auto!important;margin:0!important;gap:3px!important;flex-wrap:nowrap}
+.wf-bunker-desk .wf-agent-port{width:28px!important;min-width:28px!important;height:28px!important;min-height:28px!important;padding:5px!important;gap:0}
+.wf-bunker-desk .wf-port-label{display:none!important}
+
+.wf-motion-log:not([open]){padding:4px 8px}
+
+/* Neutral physical corridors do not represent communication permission or traffic. */
+.wf-corridor-map{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:14}
+.wf-corridor-map path{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.wf-corridor-map,.wf-corridor-map *{pointer-events:none}
+.wf-corridor-bed{stroke:#5b6556;opacity:.35}
+.wf-corridor-centre{stroke:#bac9a4;stroke-dasharray:4 8;opacity:.45}
+
+/* Courier route SVG is decorative; bird and parcel buttons keep the hit targets. */
+.wf-dispatch-signals,.wf-dispatch-signals *,.wf-dispatch-ray,.wf-message-arrows,.wf-message-arrows *{pointer-events:none}
+.wf-dispatch-ray{stroke-opacity:.7}
+
+/* Separate transient geometry/queue state from receipt notices. */
+.wf-motion-status>span{display:block}.wf-motion-status>span:empty{display:none}

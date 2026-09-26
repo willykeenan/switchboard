@@ -1,0 +1,26 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: tests
+        run: |
+          python3 -m unittest discover -s tests
+          python3 -m unittest test_inspector test_chat_inspector
+          python3 -m unittest discover -s agents/tests
+      - name: package smoke test
+        run: |
+          python3 -m pip install .
+          cd "$RUNNER_TEMP"
+          SWITCHBOARD_HOME="$RUNNER_TEMP/ab" python3 -c "import switchboard.__main__ as m, server; print(m.HERE)"
+          switchboard --help
