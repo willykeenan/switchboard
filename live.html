@@ -3,26 +3,21 @@
 <title>Live · Agent Backrooms</title><link rel="stylesheet" href="/live.css"><script src="/live.js" defer></script></head>
 <body>
 <header class="top">
-  <a class="brand" href="/constellations" title="Back to the board"><span class="mark">◈</span><span><strong>Agents, live</strong><small>Every agent at once</small></span></a>
+  <a class="brand" href="/constellations" title="Back to the board"><span class="mark">◈</span><span><strong>Agents, live</strong><small>Every team, in order</small></span></a>
   <p id="summary" class="summary" aria-live="polite">Loading…</p>
   <div class="controls">
     <div class="chips" role="group" aria-label="Show">
-      <button type="button" class="chip" data-filter="now">Working now</button>
-      <button type="button" class="chip on" data-filter="recent">Last 12 hours</button>
+      <button type="button" class="chip on" data-filter="active">Active projects</button>
       <button type="button" class="chip" data-filter="all">Everything</button>
     </div>
     <select id="project" aria-label="Project"><option value="">All projects</option></select>
     <input id="search" type="search" placeholder="Find an agent" aria-label="Find an agent">
   </div>
 </header>
+<div id="attention" class="attention" hidden><span class="att-title">Needs you</span><div id="att-list" class="att-list"></div></div>
 <p id="error" class="error" role="alert" hidden></p>
-<main id="sections">
-  <section data-bucket="needs-you" hidden><h2>Needs you <span class="count"></span></h2><div class="grid"></div></section>
-  <section data-bucket="working" hidden><h2>Working now <span class="count"></span></h2><div class="grid"></div></section>
-  <section data-bucket="recent" hidden><h2>Finished recently <span class="count"></span></h2><div class="grid"></div></section>
-  <section data-bucket="old-request" hidden><details><summary><h2>Waiting on you for days <span class="count"></span></h2></summary><div class="grid"></div></details></section>
-  <section data-bucket="quiet" hidden><h2>Quiet <span class="count"></span></h2><div class="grid"></div></section>
-  <p id="empty" class="empty" hidden>No agent matches. Try “Everything” or clear the search.</p>
-</main>
+<main id="projects"></main>
+<p id="empty" class="empty" hidden>No agent has been active in the last 12 hours. Choose “Everything” to see every team.</p>
+<details id="backlog" class="backlog" hidden><summary>Waiting on you for days <span class="count"></span></summary><div id="backlog-rows" class="rows"></div></details>
 <footer class="foot"><span class="dot" aria-hidden="true"></span><span>Watching never attaches to, resumes or takes over a session, so this can stay open here and in Codex at the same time. Notes reach an agent at its next step; “Open in Codex” hands you to Codex, which owns the session.</span><span id="updated" class="updated"></span></footer>
 </body></html>

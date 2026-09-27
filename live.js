@@ -1,9 +1,15 @@
-/* Agents, live: every agent at once. Read-only; polls /api/live and never touches a session. */
+/* Agents, live: every team in a stable structural order. Watching is passive; actions go through the board. */
 (function () {
   "use strict";
-  var filter = "recent", project = "", query = "", timer = null, cards = new Map(), last = null, failures = 0;
+  var filter = "active", onlyProject = "", query = "", timer = null, last = null, failures = 0;
+  var rows = new Map(), panels = new Map(), headings = new Map();
+  var ACTIVE = { "needs-you": 1, working: 1, recent: 1 };
+  var PHASE_WORDS = { tools: "Using a tool…", waiting: "Waiting on a tool or timer…", quiet: "No recent update",
+    unknown: "Idle", unavailable: "Log not readable" };
+  var STUCK_SECONDS = 300;
+  var collapsed = {};
+  try { collapsed = JSON.parse(localStorage.getItem("live.collapsed") || "{}") || {}; } catch (e) { collapsed = {}; }
   var $ = function (id) { return document.getElementById(id); };
-  var PHASE_WORDS = { tools: "Using a tool…", waiting: "Waiting on a tool or timer…" };
 
   function epoch(v) { var t = v ? Date.parse(v) : NaN; return isNaN(t) ? null : t; }
   function ago(ms) {
@@ -28,115 +34,121 @@
     if (text !== undefined && text !== null) n.textContent = text;
     return n;
   }
+  function stuck(s) {
+    var a = s.activity || {};
+    return a.turnStatus === "open" && a.phase === "quiet" && typeof a.ageSeconds === "number" && a.ageSeconds >= STUCK_SECONDS;
+  }
 
-  function card(s) {
-    var c = cards.get(s.id);
-    if (!c) {
-      c = el("article", "card");
-      c.tabIndex = 0;
-      c.setAttribute("role", "button");
-      c.addEventListener("click", function () { c.classList.toggle("open"); c.setAttribute("aria-expanded", c.classList.contains("open")); });
-      c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); c.click(); } });
-      cards.set(s.id, c);
+  function stateText(s) {
+    var a = s.activity || {};
+    if (stuck(s)) return "No update for " + span(a.ageSeconds);
+    return PHASE_WORDS[a.phase] || a.label || "Activity unknown";
+  }
+
+  function row(s) {
+    var r = rows.get(s.id);
+    if (!r) {
+      r = el("div", "row");
+      r.tabIndex = 0;
+      r.setAttribute("role", "button");
+      r.addEventListener("click", function () { r.classList.toggle("open"); r.setAttribute("aria-expanded", r.classList.contains("open")); });
+      r.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.click(); } });
+      rows.set(s.id, r);
     }
     var a = s.activity || {};
-    c.dataset.bucket = s.bucket;
-    c.dataset.phase = a.phase || "unknown";
-    c.setAttribute("aria-expanded", c.classList.contains("open"));
-    if (c.dataset.editing === "1") return c;  // never wipe a note while it is being written
-    var said0 = a.publicAction || (s.bucket === "working" || s.bucket === "needs-you" ? a.lastAction : null);
-    var turn0 = a.active && typeof a.durationSeconds === "number" ? span(a.durationSeconds) : "";
-    var sig = JSON.stringify([s.title, s.provider, s.bucket, a.phase, a.label, said0, a.planProgress, s.project, s.role,
-      turn0, a.lastFinishedDurationSeconds, a.model, a.reasoning, a.turnStatus, a.lastFinishedAt, s.note, s.managed, s.endpoint]);
+    r.dataset.bucket = s.bucket;
+    r.dataset.phase = a.phase || "unknown";
+    r.classList.toggle("stuck", stuck(s));
+    r.setAttribute("aria-expanded", r.classList.contains("open"));
+    if (r.dataset.editing === "1") return r;
     var seenAt = epoch(a.observedAt) || epoch(s.lastSeenAt);
-    if (c.dataset.sig === sig) {  // unchanged: only refresh the relative time, so buttons never move under the pointer
-      var u = c.querySelector(".seen");
-      if (u && seenAt) u.textContent = "updated " + ago(seenAt);
-      return c;
+    var turn = a.active && typeof a.durationSeconds === "number" ? "turn " + span(a.durationSeconds) :
+      (typeof a.lastFinishedDurationSeconds === "number" && s.bucket === "recent" ? "last " + span(a.lastFinishedDurationSeconds) : "");
+    var sig = JSON.stringify([s.title, s.team, s.provider, s.bucket, a.phase, stateText(s), turn, s.workingOn, s.waitingOn, a.publicAction,
+      a.model, a.reasoning, a.turnStatus, a.lastFinishedAt, s.note, s.managed, s.endpoint]);
+    if (r.dataset.sig === sig) {
+      var u = r.querySelector(".age");
+      if (u) u.textContent = seenAt ? ago(seenAt) : "";
+      return r;
     }
-    c.dataset.sig = sig;
-    while (c.firstChild) c.removeChild(c.firstChild);
+    r.dataset.sig = sig;
+    while (r.firstChild) r.removeChild(r.firstChild);
 
-    var row = el("div", "row");
-    row.appendChild(el("div", "name", s.title));
-    row.appendChild(el("span", "tag " + (s.provider || ""), s.provider === "claude" ? "Claude" : s.provider === "codex" ? "Codex" : (s.provider || "")));
-    c.appendChild(row);
+    r.appendChild(el("span", "pip"));
+    var who = el("div", "who");
+    who.appendChild(el("div", "name", s.title));
+    who.appendChild(el("div", "team", [s.team, s.provider === "claude" ? "Claude Code" : s.provider === "codex" ? "Codex" : s.provider].filter(Boolean).join(" · ")));
+    r.appendChild(who);
 
-    var state = el("div", "state");
-    state.appendChild(el("span", "pip"));
-    state.appendChild(el("span", null, PHASE_WORDS[a.phase] || a.label || "Activity unknown"));
-    c.appendChild(state);
+    var now = el("div", "now");
+    now.appendChild(el("span", "label", stateText(s)));
+    now.appendChild(el("span", "age", seenAt ? ago(seenAt) : ""));
+    r.appendChild(now);
 
-    var said = a.publicAction || (s.bucket === "working" || s.bucket === "needs-you" ? a.lastAction : null);
-    if (said) c.appendChild(el("p", "said", said));
-
-    var p = a.planProgress;
-    if (p && p.total) {
-      var bar = el("div", "progress");
-      bar.title = p.completed + " of " + p.total + " plan steps done";
-      var fill = el("i");
-      fill.style.width = Math.round(100 * p.completed / p.total) + "%";
-      bar.appendChild(fill);
-      c.appendChild(bar);
+    var on = el("div", "on");
+    if (s.workingOn) {
+      var line = el("div");
+      line.appendChild(document.createTextNode("On: "));
+      line.appendChild(el("span", "what", s.workingOn.text));
+      if (s.workingOn.from) line.appendChild(el("span", "from", " · from " + s.workingOn.from));
+      line.title = s.workingOn.text + (s.workingOn.from ? " (from " + s.workingOn.from + ")" : "");
+      on.appendChild(line);
     }
-
-    var meta = el("div", "meta");
-    if (s.project) meta.appendChild(el("span", null, s.project));
-    if (s.role) meta.appendChild(el("span", null, s.role));
-    if (a.active && typeof a.durationSeconds === "number") meta.appendChild(el("span", null, "turn " + span(a.durationSeconds)));
-    else if (typeof a.lastFinishedDurationSeconds === "number" && s.bucket === "recent") meta.appendChild(el("span", null, "last turn " + span(a.lastFinishedDurationSeconds)));
-    if (seenAt) meta.appendChild(el("span", "seen", "updated " + ago(seenAt)));
-    if (p && p.total) meta.appendChild(el("span", null, p.completed + "/" + p.total + " steps"));
-    c.appendChild(meta);
+    if (s.waitingOn && s.waitingOn.length) {
+      on.appendChild(el("div", "wait", "Waiting on " + s.waitingOn.join(", ")));
+    }
+    if (a.publicAction && !(s.workingOn)) on.appendChild(el("div", "what", a.publicAction));
+    r.appendChild(on);
+    r.appendChild(el("div", "turn", turn));
 
     var more = el("div", "more");
-    [["Session", s.id], ["Model", [a.model, a.reasoning].filter(Boolean).join(" · ")], ["Turn", a.turnStatus],
-     ["Last finished", a.lastFinishedAt ? new Date(a.lastFinishedAt).toLocaleString() : ""],
-     ["Managed run", s.managed ? "yes" : ""]].forEach(function (kv) {
+    if (a.publicAction) more.appendChild(el("div", null, "Last said: " + a.publicAction));
+    if (a.lastAction) more.appendChild(el("div", null, "Last step: " + a.lastAction));
+    [["Model", [a.model, a.reasoning].filter(Boolean).join(" · ")], ["Session", s.id],
+     ["Last finished", a.lastFinishedAt ? new Date(a.lastFinishedAt).toLocaleString() : ""]].forEach(function (kv) {
       if (kv[1]) more.appendChild(el("div", null, kv[0] + ": " + kv[1]));
     });
     if (s.note) more.appendChild(el("div", "note", "Your note: " + s.note));
-    more.appendChild(actions(s, c));
-    c.appendChild(more);
-    return c;
+    more.appendChild(actions(s, r));
+    r.appendChild(more);
+    return r;
   }
 
-  function actions(s, c) {
-    var row = el("div", "actions");
-    row.addEventListener("click", function (e) { e.stopPropagation(); });
-    row.addEventListener("keydown", function (e) { e.stopPropagation(); });
+  function actions(s, r) {
+    var box = el("div", "actions");
+    box.addEventListener("click", function (e) { e.stopPropagation(); });
+    box.addEventListener("keydown", function (e) { e.stopPropagation(); });
     if (s.provider === "codex" && /^[0-9a-f][0-9a-f-]{19,}$/i.test(s.endpoint || "")) {
       var open = el("a", "action", "Open in Codex");
       open.href = "codex://threads/" + s.endpoint;
       open.title = "Steer it in Codex, which owns the session";
-      row.appendChild(open);
+      box.appendChild(open);
     }
     if (s.managed) {
       var work = el("a", "action", "Managed run on the board");
       work.href = "/constellations";
-      row.appendChild(work);
+      box.appendChild(work);
     }
     var noteBtn = el("button", "action", s.note ? "Edit note" : "Leave a note");
     noteBtn.type = "button";
-    noteBtn.addEventListener("click", function () { editNote(s, c, row); });
-    row.appendChild(noteBtn);
-    return row;
+    noteBtn.addEventListener("click", function () { editNote(s, r, box); });
+    box.appendChild(noteBtn);
+    return box;
   }
 
-  function editNote(s, c, row) {
-    c.dataset.editing = "1";
-    var box = el("div", "editor");
+  function editNote(s, r, box) {
+    r.dataset.editing = "1";
+    var ed = el("div", "editor");
     var text = el("textarea");
     text.rows = 3;
     text.maxLength = 4000;
     text.value = s.note || "";
     text.setAttribute("aria-label", "Note for " + s.title);
-    var hint = el("p", "hint", "The agent reads this at its next step. Nothing is interrupted.");
     var save = el("button", "action primary", "Save note");
     var cancel = el("button", "action", "Cancel");
     save.type = cancel.type = "button";
     var status = el("span", "status");
-    function done() { delete c.dataset.editing; delete c.dataset.sig; if (last) render(last); }
+    function done() { delete r.dataset.editing; delete r.dataset.sig; if (last) render(last); }
     cancel.addEventListener("click", done);
     save.addEventListener("click", function () {
       save.disabled = true;
@@ -145,71 +157,160 @@
         method: "POST",
         headers: { "Content-Type": "application/json", "X-KE-Board-Token": (last && last.controlToken) || "" },
         body: JSON.stringify({ agentId: s.id, text: text.value })
-      }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ("HTTP " + r.status)); return j; }); })
-        .then(function () { status.textContent = "Saved"; delete c.dataset.editing; delete c.dataset.sig; load(); })
+      }).then(function (res) { return res.json().then(function (j) { if (!res.ok) throw new Error(j.error || ("HTTP " + res.status)); return j; }); })
+        .then(function () { status.textContent = "Saved"; delete r.dataset.editing; delete r.dataset.sig; load(); })
         .catch(function (e) { save.disabled = false; status.textContent = "Not saved: " + e.message; });
     });
-    box.appendChild(text);
-    box.appendChild(hint);
+    ed.appendChild(text);
+    ed.appendChild(el("p", "hint", "The agent reads this at its next step. Nothing is interrupted."));
     var buttons = el("div", "actions");
     buttons.appendChild(save);
     buttons.appendChild(cancel);
     buttons.appendChild(status);
-    box.appendChild(buttons);
-    box.addEventListener("click", function (e) { e.stopPropagation(); });
-    box.addEventListener("keydown", function (e) { e.stopPropagation(); });
-    row.replaceWith(box);
+    ed.appendChild(buttons);
+    ed.addEventListener("click", function (e) { e.stopPropagation(); });
+    ed.addEventListener("keydown", function (e) { e.stopPropagation(); });
+    box.replaceWith(ed);
     text.focus();
   }
 
-  function visible(s) {
-    if (project && s.project !== project) return false;
-    if (filter === "now" && s.bucket !== "working" && s.bucket !== "needs-you") return false;
-    if (query) {
-      var hay = (s.title + " " + s.project + " " + (s.role || "")).toLowerCase();
-      if (hay.indexOf(query) === -1) return false;
+  function reconcile(parent, nodes) {
+    // Move nodes only when their position really changes, so focus, hover and open editors survive a refresh.
+    nodes.forEach(function (node, i) { if (parent.children[i] !== node) parent.insertBefore(node, parent.children[i] || null); });
+    while (parent.children.length > nodes.length) parent.removeChild(parent.lastChild);
+  }
+
+  function heading(project, group) {
+    var key = project + "\u0000" + group, h = headings.get(key);
+    if (!h) { h = el("div", "group", group); headings.set(key, h); }
+    return h;
+  }
+
+  function matches(s) {
+    if (onlyProject && s.project !== onlyProject) return false;
+    if (!query) return true;
+    var w = s.workingOn ? s.workingOn.text : "";
+    return (s.title + " " + (s.team || "") + " " + s.project + " " + w).toLowerCase().indexOf(query) !== -1;
+  }
+
+  function panel(name) {
+    var p = panels.get(name);
+    if (!p) {
+      p = el("section", "project");
+      var head = el("div", "phead");
+      head.tabIndex = 0;
+      head.setAttribute("role", "button");
+      head.appendChild(el("span", "pname", name || "No project"));
+      head.appendChild(el("span", "pcounts"));
+      var body = el("div", "pbody");
+      function toggle() {
+        p.classList.toggle("collapsed");
+        collapsed[name] = p.classList.contains("collapsed");
+        try { localStorage.setItem("live.collapsed", JSON.stringify(collapsed)); } catch (e) { /* private window */ }
+      }
+      head.addEventListener("click", toggle);
+      head.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+      p.appendChild(head);
+      p.appendChild(body);
+      if (collapsed[name]) p.classList.add("collapsed");
+      panels.set(name, p);
     }
-    return true;
+    return p;
+  }
+
+  function counts(list) {
+    var c = { need: 0, work: 0, idle: 0 };
+    list.forEach(function (s) { if (s.bucket === "needs-you") c.need++; else if (s.bucket === "working") c.work++; else c.idle++; });
+    return c;
+  }
+
+  function fillCounts(node, c) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+    var parts = [];
+    if (c.need) parts.push(["need", c.need + " need you"]);
+    if (c.work) parts.push(["work", c.work + " working"]);
+    if (c.idle) parts.push([null, c.idle + " idle"]);
+    parts.forEach(function (p, i) {
+      if (i) node.appendChild(document.createTextNode(" · "));
+      node.appendChild(el("span", p[0], p[1]));
+    });
   }
 
   function render(data) {
     last = data;
-    var projects = {}, shown = 0;
-    data.sessions.forEach(function (s) { if (s.project) projects[s.project] = 1; });
-    var sel = $("project"), current = sel.value;
-    var names = Object.keys(projects).sort();
-    if (sel.options.length - 1 !== names.length || names.some(function (n, i) { return sel.options[i + 1].value !== n; })) {
-      while (sel.options.length > 1) sel.remove(1);
-      names.forEach(function (n) { var o = el("option", null, n); o.value = n; sel.appendChild(o); });
-      sel.value = names.indexOf(current) >= 0 ? current : "";
-    }
-    var groups = { "needs-you": [], working: [], recent: [], "old-request": [], quiet: [] };
-    data.sessions.forEach(function (s) { if (visible(s)) groups[s.bucket].push(s); });
-    Object.keys(groups).forEach(function (b) {
-      var section = document.querySelector('section[data-bucket="' + b + '"]');
-      var grid = section.querySelector(".grid");
-      var list = groups[b];
-      section.hidden = list.length === 0;
-      section.querySelector(".count").textContent = list.length ? "· " + list.length : "";
-      var keep = new Set();
-      list.forEach(function (s) { var c = card(s); keep.add(c); grid.appendChild(c); });
-      Array.prototype.slice.call(grid.children).forEach(function (c) { if (!keep.has(c)) grid.removeChild(c); });
-      shown += list.length;
+    var byProject = new Map();
+    data.sessions.forEach(function (s) {
+      var key = s.project || "";
+      if (!byProject.has(key)) byProject.set(key, []);
+      byProject.get(key).push(s);
     });
-    $("empty").hidden = shown > 0;
+    var names = Array.from(byProject.keys());
+    var sel = $("project"), current = sel.value;
+    var labels = names.filter(Boolean);
+    if (sel.options.length - 1 !== labels.length || labels.some(function (n, i) { return sel.options[i + 1].value !== n; })) {
+      while (sel.options.length > 1) sel.remove(1);
+      labels.forEach(function (n) { var o = el("option", null, n); o.value = n; sel.appendChild(o); });
+      sel.value = labels.indexOf(current) >= 0 ? current : "";
+    }
+
+    var main = $("projects"), backlog = [], shownProjects = 0, order = [];
+    names.forEach(function (name) {
+      var list = byProject.get(name);
+      var active = list.some(function (s) { return ACTIVE[s.bucket]; });
+      if (!active && filter !== "all") {
+        list.forEach(function (s) { if (s.bucket === "old-request" && matches(s)) backlog.push(s); });
+        return;
+      }
+      var visible = list.filter(matches);
+      if (!visible.length) return;
+      var p = panel(name);
+      fillCounts(p.querySelector(".pcounts"), counts(list));
+      var body = p.querySelector(".pbody");
+      var nodes = [], group = null;
+      visible.forEach(function (s) {
+        if (s.group !== group) { group = s.group; nodes.push(heading(name, group)); }
+        nodes.push(row(s));
+      });
+      reconcile(body, nodes);
+      order.push(p);
+      shownProjects++;
+    });
+    reconcile(main, order);
+    $("empty").hidden = shownProjects > 0;
+
+    var bl = $("backlog"), blRows = $("backlog-rows");
+    bl.hidden = backlog.length === 0;
+    bl.querySelector(".count").textContent = backlog.length ? "· " + backlog.length : "";
+    reconcile(blRows, backlog.map(row));
+
+    var need = data.sessions.filter(function (s) { return s.bucket === "needs-you"; });
+    var att = $("attention"), list = $("att-list");
+    att.hidden = need.length === 0;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    need.forEach(function (s) {
+      var b = el("button", "att", s.title + (s.project ? " · " + s.project : "") + ": " + stateText(s));
+      b.type = "button";
+      b.addEventListener("click", function () {
+        var r = rows.get(s.id);
+        if (!r) return;
+        var p = r.closest(".project");
+        if (p && p.classList.contains("collapsed")) p.classList.remove("collapsed");
+        r.classList.add("open");
+        r.scrollIntoView({ block: "center", behavior: "smooth" });
+        r.focus({ preventScroll: true });
+      });
+      list.appendChild(b);
+    });
 
     var n = data.counts || {};
     var summary = $("summary");
     while (summary.firstChild) summary.removeChild(summary.firstChild);
-    var parts = [["need", n["needs-you"], "need you"], ["work", n.working, "working now"], [null, n.recent, "finished in the last 12 h"]];
-    if (n["old-request"]) parts.push([null, n["old-request"], n["old-request"] === 1 ? "older request" : "older requests"]);
-    parts.forEach(function (p, i) {
+    [["need", n["needs-you"], "need you"], ["work", n.working, "working now"], [null, n.recent, "finished in the last 12 h"]].forEach(function (p, i) {
       if (i) summary.appendChild(document.createTextNode(" · "));
-      var b = el("b", p[0], String(p[1] || 0));
-      summary.appendChild(b);
+      summary.appendChild(el("b", p[0], String(p[1] || 0)));
       summary.appendChild(document.createTextNode(" " + p[2]));
     });
-    if (!n.working && !n["needs-you"]) summary.appendChild(document.createTextNode(" · nobody is working right now"));
+    if (n["old-request"]) summary.appendChild(document.createTextNode(" · " + n["old-request"] + (n["old-request"] === 1 ? " older request" : " older requests")));
     $("updated").textContent = "Updated " + new Date(epoch(data.sampledAt) || Date.now()).toLocaleTimeString();
   }
 
@@ -217,13 +318,8 @@
 
   function load() {
     fetch("/api/live" + (filter === "all" ? "?all=1" : ""), { headers: { Accept: "application/json" }, cache: "no-store" })
-      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-      .then(function (data) {
-        failures = 0;
-        $("error").hidden = true;
-        render(data);
-        schedule(1000 * (data.pollSeconds || 3));
-      })
+      .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+      .then(function (data) { failures = 0; $("error").hidden = true; render(data); schedule(1000 * (data.pollSeconds || 3)); })
       .catch(function () {
         failures += 1;
         $("error").textContent = "The board is not answering. Retrying…";
@@ -235,12 +331,11 @@
   document.querySelectorAll(".chip").forEach(function (b) {
     b.addEventListener("click", function () {
       document.querySelectorAll(".chip").forEach(function (x) { x.classList.toggle("on", x === b); });
-      var before = filter;
       filter = b.dataset.filter;
-      if ((before === "all") !== (filter === "all")) load(); else if (last) render(last);
+      load();
     });
   });
-  $("project").addEventListener("change", function (e) { project = e.target.value; if (last) render(last); });
+  $("project").addEventListener("change", function (e) { onlyProject = e.target.value; if (last) render(last); });
   $("search").addEventListener("input", function (e) { query = e.target.value.trim().toLowerCase(); if (last) render(last); });
   document.addEventListener("visibilitychange", function () { if (!document.hidden) load(); else clearTimeout(timer); });
   load();
