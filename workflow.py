@@ -203,6 +203,7 @@ class Workflow:
             db.execute('CREATE TABLE IF NOT EXISTS workflow_messages(id TEXT PRIMARY KEY,sender TEXT,recipient TEXT,body TEXT,message_key TEXT UNIQUE,created_at TEXT,read_at TEXT)')
             db.execute('CREATE TABLE IF NOT EXISTS workflow_message_intents(message_id TEXT PRIMARY KEY,intent TEXT NOT NULL)')
             db.execute('CREATE TABLE IF NOT EXISTS workflow_mirrors(message_id TEXT PRIMARY KEY,room_seq INTEGER,mirrored_at TEXT)')
+            db.execute('CREATE TABLE IF NOT EXISTS workflow_links(id TEXT PRIMARY KEY,actor TEXT NOT NULL,other TEXT NOT NULL,edges TEXT NOT NULL,reason TEXT NOT NULL,revision INTEGER,created_at TEXT NOT NULL,removed_at TEXT,room_seq INTEGER)')
             self.path.chmod(0o600);return db
         except BaseException as exc:
             annotate(exc,self.path,'workflow-schema');db.close();raise
@@ -339,6 +340,85 @@ class Workflow:
         queued=allowed(state,sender,recipient) or (sender==ROUTER_SENDER and router_send_allowed(self,state,recipient))
         return {'id':mid,'status':'QUEUED' if queued else 'HELD','launched':False,'interrupted':False,'roomMirrorError':mirror.get('error'),'intent':intent,'workTracked':work is not None,'note':'Handoff delivery is tracked at http://127.0.0.1:47836/; notifications do not wake recipients.'}
 
+    def link(self,actor,other,reason,both=True):
+        """An agent opens its own connections when its work needs another agent.
+
+        Only edges touching the actor are added, as explicit Allows. The operator's explicit Blocks and closed
+        lanes always win and are never changed here. Every link is logged and announced to the operator.
+        """
+        ids={s['agent_id'] for s in self.catalog()['sessions']}
+        if actor not in ids or other not in ids or actor==other: raise ValueError('Use two exact existing session IDs')
+        if not isinstance(reason,str) or not reason.strip() or len(reason)>1000: raise ValueError('Say why in one short reason (1-1000 characters)')
+        from workspace import Conflict
+        from workflow_layout import active
+        pairs=[(actor,other)]+([(other,actor)] if both else [])
+        for attempt in range(3):
+            state=self.read()
+            if not state['enabled']: raise ValueError('Manual workflow is not initialized')
+            closed={l['id'] for l in state.get('laneCatalog') or [] if not active(l)}
+            if any(p['agentId'] in (actor,other) and p['laneId'] in closed for p in state['placements']): raise ValueError('A closed lane holds this pair; only the operator can reopen it')
+            edges={(e['from'],e['to']):e['allow'] for e in state['connections']}
+            blocked=[a+' -> '+b for a,b in pairs if edges.get((a,b)) is False]
+            if blocked: raise ValueError('The operator blocked '+', '.join(blocked)+'; only they can change that in Constellations')
+            added=[(a,b) for a,b in pairs if (a,b) not in edges]
+            if not added:
+                return {'linked':True,'added':[],'revision':state['revision'],'mayMessage':allowed(state,actor,other),'mayReceive':allowed(state,other,actor),'note':'Already linked; nothing changed.'}
+            data={k:copy.deepcopy(state[k]) for k in DEFAULT}
+            data['connections']+=[{'from':a,'to':b,'allow':True} for a,b in added]
+            try:
+                saved=self.save(data,state['revision'],'agent-link:'+actor);break
+            except Conflict:
+                if attempt==2: raise
+        lid=str(uuid.uuid4());edges_json=json.dumps([{'from':a,'to':b} for a,b in added])
+        with self._connect() as db:db.execute('INSERT INTO workflow_links VALUES(?,?,?,?,?,?,?,NULL,NULL)',(lid,actor,other,edges_json,reason.strip(),saved['revision'],now()))
+        notice=self._announce_link(lid,actor,other,added,reason.strip())
+        return {'linked':True,'id':lid,'added':[{'from':a,'to':b} for a,b in added],'revision':saved['revision'],
+                'mayMessage':allowed(saved,actor,other),'mayReceive':allowed(saved,other,actor),'roomNotice':notice,
+                'note':'Held messages between this pair now deliver on the next dispatcher pass. The operator sees this link in Constellations and can Block it.'}
+
+    def unlink(self,actor,other):
+        """Remove only the edges agents opened between this pair with link(); the operator's own edges stay."""
+        ids={s['agent_id'] for s in self.catalog()['sessions']}
+        if actor not in ids or other not in ids or actor==other: raise ValueError('Use two exact existing session IDs')
+        with self._connect() as db:
+            rows=[dict(r) for r in db.execute('SELECT id,edges FROM workflow_links WHERE removed_at IS NULL AND ((actor=? AND other=?) OR (actor=? AND other=?))',(actor,other,other,actor))]
+        opened={(e['from'],e['to']) for r in rows for e in json.loads(r['edges'])}
+        from workspace import Conflict
+        for attempt in range(3):
+            state=self.read();data={k:copy.deepcopy(state[k]) for k in DEFAULT}
+            keep=[e for e in data['connections'] if not ((e['from'],e['to']) in opened and e['allow'] is True)]
+            removed=len(data['connections'])-len(keep)
+            if not removed:break
+            data['connections']=keep
+            try:
+                state=self.save(data,state['revision'],'agent-unlink:'+actor);break
+            except Conflict:
+                if attempt==2: raise
+        with self._connect() as db:
+            for r in rows:db.execute('UPDATE workflow_links SET removed_at=? WHERE id=?',(now(),r['id']))
+        return {'unlinked':removed,'revision':state['revision'],'mayMessage':allowed(state,actor,other),'mayReceive':allowed(state,other,actor)}
+
+    def links(self,agent=None):
+        if not self.path.exists():return []
+        with workflow_reader(self.path) as db:
+            if not db.execute("SELECT 1 FROM sqlite_master WHERE name='workflow_links'").fetchone():return []
+            db.row_factory=sqlite3.Row
+            rows=[dict(r) for r in db.execute('SELECT * FROM workflow_links ORDER BY created_at DESC LIMIT 200')]
+        return [dict(r,edges=json.loads(r['edges'])) for r in rows if agent is None or agent in (r['actor'],r['other'])]
+
+    def _announce_link(self,lid,actor,other,added,reason):
+        """Tell the operator in the global room; a lost post never undoes the link."""
+        try:
+            from room_writer import post as write_room
+            direction='both ways' if len(added)==2 else ('one way: '+added[0][0]+' -> '+added[0][1])
+            body=('Link opened by an agent ('+direction+')\nFrom: '+self.display_identity(actor)+'\nWith: '+self.display_identity(other)+
+                  '\nWhy: '+reason+'\n\nExact agents: '+actor+' and '+other+'\nThe operator can Block or remove it in Constellations: http://127.0.0.1:47834/constellations')
+            result=write_room(Path(self.workspace.rooms.root)/'global',actor,body,['operator'],'message',None,'workflow-link:'+lid)
+            with self._connect() as db:db.execute('UPDATE workflow_links SET room_seq=? WHERE id=?',(result['seq'],lid))
+            return {'posted':True,'seq':result['seq']}
+        except (OSError,ValueError,KeyError,sqlite3.Error,SystemExit) as exc:
+            return {'posted':False,'error':str(exc)}
+
     def mirror_pending(self,limit=5):
         """Human-only room outbox. Stable keys recover a lost post receipt."""
         if not self.read()['enabled']:return {'mirrored':0}
@@ -377,7 +457,7 @@ class Workflow:
         if has_tasks:
             from taskflow import TaskFlow
             task_context=TaskFlow(self.root,self).context(aid)
-        return {'operatingRole':role_contract(self,aid),'lane':organization,'enabled':state['enabled'],'revision':state['revision'],'session':aid,'assignment':next((p for p in state['placements'] if p['agentId']==aid),None),'assignmentNote':next((n['text'] for n in state['notes'] if n['agentId']==aid),''),'mayMessage':[i for i in sorted(ids) if allowed(state,aid,i)],'inbox':self.messages(aid),'taskBoard':task_context,'liveTurnRule':'Keep the current live task. Handoffs can wake eligible idle recipients; busy recipients finish first. Notifications never wake.','handoffs':self.handoff_status(aid)}
+        return {'operatingRole':role_contract(self,aid),'lane':organization,'enabled':state['enabled'],'revision':state['revision'],'session':aid,'assignment':next((p for p in state['placements'] if p['agentId']==aid),None),'assignmentNote':next((n['text'] for n in state['notes'] if n['agentId']==aid),''),'mayMessage':[i for i in sorted(ids) if allowed(state,aid,i)],'selfLink':{'command':'workflowctl.py link --to <exact agent id> --reason "<why this work needs them>"','rule':"Open your own two-way link when work needs another agent. The operator's explicit Blocks and closed lanes still win; every link is announced to them and they can Block it in Constellations."},'inbox':self.messages(aid),'taskBoard':task_context,'liveTurnRule':'Keep the current live task. Handoffs can wake eligible idle recipients; busy recipients finish first. Notifications never wake.','handoffs':self.handoff_status(aid)}
 
     def handoff_status(self,aid=None):
         from workflow_handoffs import Handoffs

@@ -10,6 +10,16 @@ from workspace import Workspace
 from room_reader import RoomStore
 from store import data_root, rooms_root
 
+def inherited_identity(w,claimed=None):
+    """The calling agent's own registered session, from its inherited provider identity; never from arguments alone."""
+    found=[]
+    if os.environ.get('CODEX_THREAD_ID'):found.append(w.context(os.environ['CODEX_THREAD_ID']).get('session'))
+    if os.environ.get('CLAUDE_CODE_SESSION_ID'):found.append(w.context('claude:'+os.environ['CLAUDE_CODE_SESSION_ID']).get('session'))
+    found=[f for f in dict.fromkeys(found) if f]
+    if claimed:found=[f for f in found if f==claimed]
+    if len(found)!=1:raise ValueError('Exact inherited Codex or Claude session identity required; an agent can only link itself')
+    return found[0]
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     sub=p.add_subparsers(dest='command',required=True)
@@ -21,6 +31,9 @@ def main():
     c=sub.add_parser('work-accept');c.add_argument('--message-id',required=True)
     c=sub.add_parser('work-return');c.add_argument('--message-id',required=True);c.add_argument('--summary',required=True);c.add_argument('--blocked',action='store_true');c.add_argument('--presentation-file',type=Path,help='Optional bounded plain-language title, result, remaining, nextStep and reported availability')
     c=sub.add_parser('work-close');c.add_argument('--message-id',required=True);c.add_argument('--outcome',choices=['accepted','revision','blocked'],required=True);c.add_argument('--note',required=True)
+    c=sub.add_parser('link',help='Open your own two-way link to another agent');c.add_argument('--to',dest='recipient',required=True);c.add_argument('--reason',required=True);c.add_argument('--one-way',action='store_true',help='Only you -> them');c.add_argument('--from',dest='sender')
+    c=sub.add_parser('unlink',help='Remove links agents opened between you and another agent');c.add_argument('--to',dest='recipient',required=True);c.add_argument('--from',dest='sender')
+    c=sub.add_parser('links');c.add_argument('--session')
     c=sub.add_parser('read-ack');c.add_argument('--session',required=True);c.add_argument('--message-id',required=True)
     a=p.parse_args();root=data_root()
     w=Workflow(root,Workspace(root,RoomStore(rooms_root(root))))
@@ -29,7 +42,10 @@ def main():
         result=w.context(a.session)
         if a.brief:result['inbox']=[{k:m[k] for k in ('id','sender','body','created_at')} for m in result['inbox'][:8]]
     elif a.command=='handoffs':result=w.handoff_status(a.session)
-    elif a.command=='check':result={'allowed':allowed(w.read(),a.sender,a.recipient),'delivery':'exact-agent handoff dispatcher; busy agents are deferred','wakeAllowed':allowed(w.read(),a.sender,a.recipient) and w.handoff_status().get('enabled',False),'interruptAllowed':False}
+    elif a.command=='link':result=w.link(inherited_identity(w,a.sender),a.recipient,a.reason,both=not a.one_way)
+    elif a.command=='unlink':result=w.unlink(inherited_identity(w,a.sender),a.recipient)
+    elif a.command=='links':result={'links':w.links(a.session)}
+    elif a.command=='check':result={'allowed':allowed(w.read(),a.sender,a.recipient),'selfLink':'If not allowed and not blocked by the operator: workflowctl.py link --to '+a.recipient+' --reason "<why>"','delivery':'exact-agent handoff dispatcher; busy agents are deferred','wakeAllowed':allowed(w.read(),a.sender,a.recipient) and w.handoff_status().get('enabled',False),'interruptAllowed':False}
     elif a.command=='send':
         actual=os.environ.get('CODEX_THREAD_ID')
         canonical=w.context(actual).get('session') if actual else None

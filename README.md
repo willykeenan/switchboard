@@ -53,6 +53,7 @@ python3 -m switchboard --install
 - **Workspace / workflow graph** — projects, lanes, roles, directed allow/deny edges
 - **Placements** — one primary seat per agent on the map
 - **Permissioned messaging** — send only along saved connections
+- **Self-links** — an agent opens its own two-way link when its work needs another agent (`workflowctl.py link --to ID --reason WHY`); the operator's Blocks always win and every link is announced
 - **Exact-recipient handoffs** — enqueue a message for one exact recipient; the handoff daemon tracks delivery (no provider transport ships, so nothing is started for you)
 - **Manual routing by default** — incidents and messages wait for the operator; nothing is assigned, woken or launched automatically
 - **Taskflow** — capture, offer, return, independent review

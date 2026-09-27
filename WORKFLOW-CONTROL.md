@@ -61,7 +61,9 @@ python3 workflowctl.py send --from PROVIDER:EXACT_SESSION --to PROVIDER:EXACT_SE
 
 The result is `QUEUED` or `HELD`. `QUEUED` means available in the recipient's
 passive inbox, not read, accepted or done. `HELD` means the saved connections do
-not permit delivery; the request stays visible to the operator. Never bypass it.
+not permit delivery yet. If the work needs that agent, open your own link (see
+Self-links below); held requests between the pair then deliver. Never bypass a
+connection any other way.
 Connections are directional. An explicit block overrides the same-lane default.
 Revoking a connection holds its unread messages.
 
@@ -102,8 +104,30 @@ or provider-wide interception layer. Already running agent turns adopt changes w
 they next read their context.
 
 State lives in `$SWITCHBOARD_HOME/runtime/workflow.sqlite3` with immutable edit
-history and revision checks. Only the operator edits placements, connections and
-direction through the app. Agents read their context and use the passive inbox.
+history and revision checks. The operator edits placements and direction, and sets
+Blocks, through the app. Agents read their context, use the passive inbox, and open or
+remove their own links with `workflowctl.py link` / `unlink`.
+
+## Self-links
+
+An agent opens its own connection to an exact registered agent when its work needs it:
+
+```sh
+python3 workflowctl.py link --to PROVIDER:EXACT_SESSION --reason TEXT [--one-way]
+```
+
+- Links are two-way by default, because returned work needs both directions.
+- Identity comes from the caller's inherited `CODEX_THREAD_ID` or
+  `CLAUDE_CODE_SESSION_ID`. An agent can only link itself, never two others.
+- The operator's explicit Blocks and closed lanes always win. `link` refuses and
+  changes nothing.
+- Every link is recorded (the `workflow_links` table, history actor
+  `agent-link:<id>`) and announced in the global room. The operator can Block or
+  remove it in Constellations.
+- `unlink --to ...` removes only agent-opened edges for that pair. `links` lists
+  them.
+- A link grants communication only. Wake, interrupt and custody rules are
+  unchanged, and handoffs still go through the dispatcher.
 
 ## Teams, lane canvases and advisory audit
 
