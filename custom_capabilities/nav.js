@@ -9,7 +9,7 @@
   let project = new URLSearchParams(location.search).get('project') || 'demo';
   const nav = document.createElement('nav');
   nav.id = 'capabilities-nav'; nav.setAttribute('aria-label', 'Switchboard');
-  const tabs = [['Workflow', '/constellations'], ['Agents', '/agents'], ['Custom capabilities', '/capabilities'], ['Library', '/library']];
+  const tabs = [['Workflow', '/constellations'], ['Live', '/live'], ['Agents', '/agents'], ['Custom capabilities', '/capabilities'], ['Library', '/library']];
   for (const [title, href] of tabs) {
     const a = document.createElement('a'); a.textContent = title; a.dataset.path = href;
     if (location.pathname === href || location.pathname === href + '/') a.setAttribute('aria-current', 'page');

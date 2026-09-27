@@ -54,6 +54,7 @@ python3 -m switchboard --install
 - **Placements** — one primary seat per agent on the map
 - **Permissioned messaging** — send only along saved connections
 - **Self-links** — an agent opens its own two-way link when its work needs another agent (`workflowctl.py link --to ID --reason WHY`); the operator's Blocks always win and every link is announced
+- **Live** — `/live` shows every agent at once: who needs you, who is working and what they last said, who finished recently. Watching is passive (it never attaches to or takes over a session), so it can stay open next to Codex; leave an agent a note from its card or jump to the thread in Codex
 - **Exact-recipient handoffs** — enqueue a message for one exact recipient; the handoff daemon tracks delivery (no provider transport ships, so nothing is started for you)
 - **Manual routing by default** — incidents and messages wait for the operator; nothing is assigned, woken or launched automatically
 - **Taskflow** — capture, offer, return, independent review

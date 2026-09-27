@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live · Agent Backrooms</title><link rel="stylesheet" href="/live.css"><script src="/live.js" defer></script></head>
+<body>
+<header class="top">
+  <a class="brand" href="/constellations" title="Back to the board"><span class="mark">◈</span><span><strong>Agents, live</strong><small>Every agent at once</small></span></a>
+  <p id="summary" class="summary" aria-live="polite">Loading…</p>
+  <div class="controls">
+    <div class="chips" role="group" aria-label="Show">
+      <button type="button" class="chip" data-filter="now">Working now</button>
+      <button type="button" class="chip on" data-filter="recent">Last 12 hours</button>
+      <button type="button" class="chip" data-filter="all">Everything</button>
+    </div>
+    <select id="project" aria-label="Project"><option value="">All projects</option></select>
+    <input id="search" type="search" placeholder="Find an agent" aria-label="Find an agent">
+  </div>
+</header>
+<p id="error" class="error" role="alert" hidden></p>
+<main id="sections">
+  <section data-bucket="needs-you" hidden><h2>Needs you <span class="count"></span></h2><div class="grid"></div></section>
+  <section data-bucket="working" hidden><h2>Working now <span class="count"></span></h2><div class="grid"></div></section>
+  <section data-bucket="recent" hidden><h2>Finished recently <span class="count"></span></h2><div class="grid"></div></section>
+  <section data-bucket="old-request" hidden><details><summary><h2>Waiting on you for days <span class="count"></span></h2></summary><div class="grid"></div></details></section>
+  <section data-bucket="quiet" hidden><h2>Quiet <span class="count"></span></h2><div class="grid"></div></section>
+  <p id="empty" class="empty" hidden>No agent matches. Try “Everything” or clear the search.</p>
+</main>
+<footer class="foot"><span class="dot" aria-hidden="true"></span><span>Watching never attaches to, resumes or takes over a session, so this can stay open here and in Codex at the same time. Notes reach an agent at its next step; “Open in Codex” hands you to Codex, which owns the session.</span><span id="updated" class="updated"></span></footer>
+</body></html>

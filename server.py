@@ -54,7 +54,7 @@ HOST = os.environ.get("SWITCHBOARD_HOST", "127.0.0.1")
 PORT = int(os.environ.get("SWITCHBOARD_PORT", "47834"))
 SCAN_SECONDS = float(os.environ.get("SWITCHBOARD_SCAN_SECONDS", "5"))
 TOKEN_PATH = board.ROOT / "runtime" / "control-token"
-ASSETS = {name: (Path(__file__).parent / name).read_bytes() for name in ['workflow-motion.css','workflow-signals.js','workflow-communications.js','canvas-pan.js','canvas-pan.css','workflow-structure.js','workflow-structure.css','rooms.html', 'rooms.css', 'rooms.js', 'workspaces.js', 'constellations.html', 'constellations.css', 'constellations.js','agent-settings.js','agent-settings.css','visual-choices.js','visual-choices.css','activity.js','activity.css','taskflow.js','taskflow.css']}
+ASSETS = {name: (Path(__file__).parent / name).read_bytes() for name in ['workflow-motion.css','workflow-signals.js','workflow-communications.js','canvas-pan.js','canvas-pan.css','workflow-structure.js','workflow-structure.css','rooms.html', 'rooms.css', 'rooms.js', 'workspaces.js', 'constellations.html', 'constellations.css', 'constellations.js','agent-settings.js','agent-settings.css','visual-choices.js','visual-choices.css','activity.js','activity.css','taskflow.js','taskflow.css','live.html','live.css','live.js']}
 from store import rooms_root
 _rooms_root = rooms_root(board.ROOT)
 _rooms_root.mkdir(parents=True, exist_ok=True)
@@ -65,6 +65,8 @@ LIBRARY_SERVICES = LibraryServiceView(WORKFLOW)
 SERVICES = LocalServices(board.ROOT, WORKFLOW)
 TASKFLOW = TaskFlow(board.ROOT, WORKFLOW)
 WORKFLOW.taskflow = TASKFLOW
+from live_view import LiveView
+LIVE = LiveView(WORKFLOW)  # passive all-agents view; one cached snapshot serves every viewer
 CYCLE_ROUTES = CycleRoutes(TASKFLOW,CycleGrants(board.ROOT/'runtime/cycle-identity/grants.json'))
 SETTINGS_SERVICE = LocalControlSettings(SERVICES,lambda:TOKEN)
 SETTINGS_ROUTES = SettingsRoutes(SETTINGS_SERVICE,lambda:TOKEN,SETTINGS_SERVICE.identity.resolve)
@@ -269,6 +271,12 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 self.send_json({'error': 'Library staffing is temporarily unavailable'}, 503)
             return
+        if path == '/api/live':
+            if self.headers.get('Host') not in (f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'):
+                self.send_json({'error':'Loopback host required'},HTTPStatus.FORBIDDEN);return
+            try:self.send_json({**LIVE.snapshot(parse_qs(urlparse(self.path).query).get('all')==['1']),'controlToken':TOKEN})
+            except Exception as exc:self.send_json({'error':'Live view unavailable: '+str(exc)},HTTPStatus.SERVICE_UNAVAILABLE)
+            return
         if path in ('/api/workflow','/api/workflow/activity'):
             if self.headers.get('Host') not in (f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'):
                 self.send_json({'error':'Loopback host required'},HTTPStatus.FORBIDDEN);return
@@ -282,8 +290,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(payload)
             except Exception as exc:self.send_json({'error':'Workflow unavailable: '+str(exc)},HTTPStatus.SERVICE_UNAVAILABLE)
             return
-        if path in ('/workflow-motion.css','/workflow-signals.js','/workflow-communications.js','/canvas-pan.js','/canvas-pan.css','/workflow-structure.js','/workflow-structure.css','/constellations','/constellations/','/constellations.css','/constellations.js','/agent-settings.js','/agent-settings.css','/visual-choices.js','/visual-choices.css','/activity.js','/activity.css','/taskflow.js','/taskflow.css'):
-            name='constellations.html' if path in ('/constellations','/constellations/') else path[1:]
+        if path in ('/workflow-motion.css','/workflow-signals.js','/workflow-communications.js','/canvas-pan.js','/canvas-pan.css','/workflow-structure.js','/workflow-structure.css','/constellations','/constellations/','/constellations.css','/constellations.js','/agent-settings.js','/agent-settings.css','/visual-choices.js','/visual-choices.css','/activity.js','/activity.css','/taskflow.js','/taskflow.css','/live','/live/','/live.css','/live.js'):
+            name='constellations.html' if path in ('/constellations','/constellations/') else 'live.html' if path in ('/live','/live/') else path[1:]
             body=ASSETS[name];self.send_response(200)
             self.send_header('Content-Type',{'html':'text/html','css':'text/css','js':'text/javascript'}[name.rsplit('.',1)[1]]+'; charset=utf-8')
             self.send_header('Cache-Control','no-store')
@@ -379,6 +387,19 @@ class Handler(BaseHTTPRequestHandler):
             except workspace.Conflict as exc:self.send_json({'error':str(exc)},409)
             except (ValueError,KeyError,TypeError) as exc:self.send_json({'error':str(exc)},400)
             except Exception as exc:self.send_json({'error':'Task change uncertain; refresh before retrying: '+str(exc)},503)
+            return
+        if urlparse(self.path).path == '/api/live/note':
+            expected_origin='http://'+self.headers.get('Host','')
+            if self.headers.get('Host') not in (f'127.0.0.1:{self.server.server_port}',f'localhost:{self.server.server_port}') or self.headers.get('Origin')!=expected_origin or not secrets.compare_digest(self.headers.get('X-KE-Board-Token',''),TOKEN):
+                self.send_json({'error':'Same-origin control token required'},HTTPStatus.FORBIDDEN);return
+            try:
+                length=int(self.headers.get('Content-Length','0'))
+                if not 0<length<=20000:raise ValueError('Invalid request length')
+                body=json.loads(self.rfile.read(length))
+                self.send_json(LIVE.save_note(body.get('agentId'),body.get('text','')))
+            except workspace.Conflict as exc:self.send_json({'error':str(exc)},HTTPStatus.CONFLICT)
+            except (ValueError,KeyError,TypeError,AttributeError) as exc:self.send_json({'error':str(exc)},HTTPStatus.BAD_REQUEST)
+            except Exception:self.send_json({'error':'Note not saved. Your earlier note is unchanged.'},HTTPStatus.SERVICE_UNAVAILABLE)
             return
         if urlparse(self.path).path == '/api/workflow':
             expected_origin='http://'+self.headers.get('Host','')
