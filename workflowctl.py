@@ -10,6 +10,15 @@ from workspace import Workspace
 from room_reader import RoomStore
 from store import data_root, rooms_root
 
+def caller_identities(w):
+    """Every registered identity this process inherited (a Claude shell inside a Codex task inherits both)."""
+    ids=set()
+    if os.environ.get('CODEX_THREAD_ID'):
+        raw=os.environ['CODEX_THREAD_ID'];ids.add('codex:'+raw);ids.add(w.context(raw).get('session'))
+    if os.environ.get('CLAUDE_CODE_SESSION_ID'):
+        raw='claude:'+os.environ['CLAUDE_CODE_SESSION_ID'];ids.add(raw);ids.add(w.context(raw).get('session'))
+    return {i for i in ids if i}
+
 def inherited_identity(w,claimed=None):
     """The calling agent's own registered session, from its inherited provider identity; never from arguments alone."""
     found=[]
@@ -49,7 +58,9 @@ def main():
     elif a.command=='send':
         actual=os.environ.get('CODEX_THREAD_ID')
         canonical=w.context(actual).get('session') if actual else None
-        if actual and a.sender not in ('codex:'+actual,canonical):raise ValueError('Sender must match this exact Codex session')
+        mine=caller_identities(w)
+        if mine and a.sender not in mine:raise ValueError('Sender must match this exact Codex or Claude session')
+        if not actual and a.sender in mine:canonical=w.context(a.sender).get('session') or a.sender
         work=None
         if a.work_file:
             if a.notification:raise ValueError('Work cannot be sent as a passive notification')
@@ -70,8 +81,9 @@ def main():
     else:
         actual=os.environ.get('CODEX_THREAD_ID')
         canonical=w.context(actual).get('session') if actual else None
-        if actual and a.session not in (actual,'codex:'+actual,canonical):raise ValueError('Cannot acknowledge another session inbox')
-        aid=canonical or (a.session if ':' in a.session else 'codex:'+a.session)
+        mine=caller_identities(w)
+        if mine and a.session not in mine|{actual} and ('codex:'+a.session) not in mine and ('claude:'+a.session) not in mine:raise ValueError('Cannot acknowledge another session inbox')
+        aid=canonical or (a.session if ':' in a.session else next((i for i in sorted(mine) if i.split(':',1)[-1]==a.session),'codex:'+a.session))
         if not any(m['id']==a.message_id for m in w.messages(aid)):raise ValueError('Message is not in this permitted inbox')
         from workflow import now
         with w._connect() as db:db.execute('UPDATE workflow_messages SET read_at=? WHERE id=? AND recipient=?',(now(),a.message_id,aid))
